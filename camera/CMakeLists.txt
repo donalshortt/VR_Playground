@@ -19,8 +19,8 @@ set(BUILD_API_LAYERS
 )
 FetchContent_Declare(
     OpenXR
-    URL_HASH MD5=d5e915b61add7245cffaa82457ec095a
-    URL https://github.com/KhronosGroup/OpenXR-SDK-Source/archive/refs/tags/release-1.1.36.zip
+    URL_HASH MD5=924a94a2da0b5ef8e82154c623d88644
+    URL https://github.com/KhronosGroup/OpenXR-SDK-Source/archive/refs/tags/release-1.0.34.zip
         SOURCE_DIR
         openxr
 )

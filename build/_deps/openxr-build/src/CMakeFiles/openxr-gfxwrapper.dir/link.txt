@@ -1,0 +1,2 @@
+/usr/bin/ar qc libopenxr-gfxwrapper.a "CMakeFiles/openxr-gfxwrapper.dir/common/gfxwrapper_opengl.c.o"
+/usr/bin/ranlib libopenxr-gfxwrapper.a
