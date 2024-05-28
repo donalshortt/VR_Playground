@@ -1,3 +1,0 @@
-/home/donal/uni/master_thesis/VR_playground/build/_deps/openxr-subbuild/CMakeFiles/openxr-populate.dir
-/home/donal/uni/master_thesis/VR_playground/build/_deps/openxr-subbuild/CMakeFiles/edit_cache.dir
-/home/donal/uni/master_thesis/VR_playground/build/_deps/openxr-subbuild/CMakeFiles/rebuild_cache.dir

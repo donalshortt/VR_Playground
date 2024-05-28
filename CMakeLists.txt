@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project(vr_playground)
+project(openxr-tutorial)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 
@@ -11,4 +11,4 @@ set(XR_RUNTIME_JSON
     "Optional location of a specific OpenXR runtime configuration file."
 )
 
-add_subdirectory(camera)
+add_subdirectory(Chapter2)

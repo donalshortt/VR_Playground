@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: ["-I../Common", "-I../../OpenXR-SDK/include"]
