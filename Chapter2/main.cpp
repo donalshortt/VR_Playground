@@ -21,6 +21,15 @@ class OpenXRTutorial {
 			GetSystemID();
  
 			CreateSession();
+
+			while (m_applicationRunning) {
+				PollSystemEvents();
+				PollEvents();
+				if (m_sessionRunning) {
+					// Draw Frame.
+				}
+			}
+
             DestroySession();
 
 			DestroyDebugMessenger();
@@ -143,6 +152,92 @@ class OpenXRTutorial {
 		void DestroySession() {
 			OPENXR_CHECK(xrDestroySession(m_session), "Failed to destroy Session.");
 		}
+		void PollEvents() {
+			// Poll OpenXR for a new event.
+			XrEventDataBuffer eventData{XR_TYPE_EVENT_DATA_BUFFER};
+			auto XrPollEvents = [&]() -> bool {
+				eventData = {XR_TYPE_EVENT_DATA_BUFFER};
+				return xrPollEvent(m_xrInstance, &eventData) == XR_SUCCESS;
+			};
+
+			while (XrPollEvents()) {
+				switch (eventData.type) {
+					// Log the number of lost events from the runtime.
+					case XR_TYPE_EVENT_DATA_EVENTS_LOST: {
+						 XrEventDataEventsLost *eventsLost = reinterpret_cast<XrEventDataEventsLost *>(&eventData);
+						 XR_TUT_LOG("OPENXR: Events Lost: " << eventsLost->lostEventCount);
+						 break;
+					}
+					// Log that an instance loss is pending and shutdown the application.
+					case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: {
+						XrEventDataInstanceLossPending *instanceLossPending = reinterpret_cast<XrEventDataInstanceLossPending *>(&eventData);
+						XR_TUT_LOG("OPENXR: Instance Loss Pending at: " << instanceLossPending->lossTime);
+						m_sessionRunning = false;
+						m_applicationRunning = false;
+						break;
+					}
+					// Log that the interaction profile has changed.
+					case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED: {
+						XrEventDataInteractionProfileChanged *interactionProfileChanged = reinterpret_cast<XrEventDataInteractionProfileChanged *>(&eventData);
+						XR_TUT_LOG("OPENXR: Interaction Profile changed for Session: " << interactionProfileChanged->session);
+						if (interactionProfileChanged->session != m_session) {
+							XR_TUT_LOG("XrEventDataInteractionProfileChanged for unknown Session");
+							break;
+						}
+						break;
+					}
+					// Log that there's a reference space change pending.
+					case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
+						XrEventDataReferenceSpaceChangePending *referenceSpaceChangePending = reinterpret_cast<XrEventDataReferenceSpaceChangePending *>(&eventData);
+						XR_TUT_LOG("OPENXR: Reference Space Change pending for Session: " << referenceSpaceChangePending->session);
+						if (referenceSpaceChangePending->session != m_session) {
+							XR_TUT_LOG("XrEventDataReferenceSpaceChangePending for unknown Session");
+							break;
+						}
+						break;
+					}
+					// Session State changes:
+					case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
+						XrEventDataSessionStateChanged *sessionStateChanged = reinterpret_cast<XrEventDataSessionStateChanged *>(&eventData);
+						if (sessionStateChanged->session != m_session) {
+							XR_TUT_LOG("XrEventDataSessionStateChanged for unknown Session");
+						   	break;
+						}
+
+						if (sessionStateChanged->state == XR_SESSION_STATE_READY) {
+							// SessionState is ready. Begin the XrSession using the XrViewConfigurationType.
+						   	XrSessionBeginInfo sessionBeginInfo{XR_TYPE_SESSION_BEGIN_INFO};
+						   	sessionBeginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+						   	OPENXR_CHECK(xrBeginSession(m_session, &sessionBeginInfo), "Failed to begin Session.");
+						   	m_sessionRunning = true;
+						}
+						if (sessionStateChanged->state == XR_SESSION_STATE_STOPPING) {
+						   	// SessionState is stopping. End the XrSession.
+						   	OPENXR_CHECK(xrEndSession(m_session), "Failed to end Session.");
+						   	m_sessionRunning = false;
+						}
+						if (sessionStateChanged->state == XR_SESSION_STATE_EXITING) {
+						   	// SessionState is exiting. Exit the application.
+						   	m_sessionRunning = false;
+						   	m_applicationRunning = false;
+						}
+						if (sessionStateChanged->state == XR_SESSION_STATE_LOSS_PENDING) {
+						   	// SessionState is loss pending. Exit the application.
+						   	// It's possible to try a reestablish an XrInstance and XrSession, but we will simply exit here.
+						   	m_sessionRunning = false;
+						   	m_applicationRunning = false;
+						}
+						// Store state for reference across the application.
+						m_sessionState = sessionStateChanged->state;
+						break;
+					}
+
+					default: {
+						break;
+					}
+				}
+			}
+		}
 		void PollSystemEvents() {
 		}
 	private:
@@ -162,6 +257,7 @@ class OpenXRTutorial {
 		std::unique_ptr<GraphicsAPI> m_graphicsAPI = nullptr;
 
 		XrSession m_session = XR_NULL_HANDLE;
+		XrSessionState m_sessionState = XR_SESSION_STATE_UNKNOWN;
 		bool m_applicationRunning = true;
 		bool m_sessionRunning = false;
 };
