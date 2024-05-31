@@ -12,3 +12,4 @@ set(XR_RUNTIME_JSON
 )
 
 add_subdirectory(Chapter2)
+add_subdirectory(Chapter3)
